@@ -1,0 +1,55 @@
+#!/bin/sh
+
+THCRAP_FOLDER="/home/$USER/Applications/Touhou/thcrap"
+THCRAP_CONFIG=lang_en.js
+PROTON_FOLDER="/home/$USER/.local/share/Steam/compatibilitytools.d/GE-Proton7-55"
+THPRAC_FOLDER="/home/$USER/Applications/Touhou/thprac"
+
+echo "" > '/tmp/thprac_proton.log'
+exec 1<&-
+exec 2<&-
+exec 1<>'/tmp/thprac_proton.log'
+exec 2>&1
+
+while getopts "v p c:e:" flag; do
+    case "${flag}" in
+        v) USE_VPATCH=1;;
+        p) USE_THPRAC=1;;
+        c) THCRAP_CONFIG=${OPTARG};;
+        e) COMMAND=${OPTARG};;
+    esac
+done
+
+if [ -z "$COMMAND" ]; then
+    shift "$(($OPTIND -1))"
+    COMMAND=''
+    # Quote all arguments that contain whitespace
+    for i in "$@"; do
+        [[ $i =~ ( ) ]] && i=${i@Q}
+        COMMAND="$COMMAND $i"
+    done
+fi
+
+if [ "$USE_VPATCH" == 1 ]; then
+    COMMAND=$(
+        echo "$COMMAND" |
+        sed -r 's/th[0-9]*.exe/vpatch.exe/'
+    )
+fi
+
+COMMAND=$(
+    echo "$COMMAND" |
+    sed -r "s@ waitforexitandrun@& '$THCRAP_FOLDER/thcrap_loader.exe' $THCRAP_CONFIG@"
+)
+
+if [ "$USE_THPRAC" == 1 ]; then
+COMMAND=$(
+    echo "$COMMAND & sleep 10 && '$PROTON_FOLDER/proton' run '$THPRAC_FOLDER/thprac.exe'"
+)
+fi
+
+echo "--------------------GENERATED COMMAND--------------------"
+echo "$COMMAND"
+echo "---------------------------------------------------------"
+
+sh -c "$COMMAND"
