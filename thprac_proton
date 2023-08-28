@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-THCRAP_FOLDER="/home/$USER/Applications/Touhou/thcrap"
-THCRAP_CONFIG=lang_en.js
-PROTON_FOLDER="/home/$USER/.local/share/Steam/compatibilitytools.d/GE-Proton7-55"
-THPRAC_FOLDER="/home/$USER/Applications/Touhou/thprac"
+THCRAP_FOLDER="/home/$USER/.local/share/thcrap"
+THCRAP_CONFIG=en.js
+THPRAC_LOCATION="/home/$USER/.local/share/thprac/thprac.exe"
+
+ZENITY=${STEAM_ZENITY:-$(which zenity)}
 
 echo "" > '/tmp/thprac_proton.log'
 exec 1<&-
@@ -11,12 +12,20 @@ exec 2<&-
 exec 1<>'/tmp/thprac_proton.log'
 exec 2>&1
 
+launch_config() {
+    RUN=$(
+        echo "$COMMAND" |
+        sed -r "s@ waitforexitandrun.*@ waitforexitandrun '$THCRAP_FOLDER/thcrap.exe' --skip-search-games@"
+    )
+    sh -c "$RUN"
+}
+
 while getopts "v p c:e:" flag; do
     case "${flag}" in
         v) USE_VPATCH=1;;
         p) USE_THPRAC=1;;
         c) THCRAP_CONFIG=${OPTARG};;
-        e) COMMAND=${OPTARG};;
+        e) COMMAND=${OPTARG};; # Deprecated
     esac
 done
 
@@ -28,6 +37,39 @@ if [ -z "$COMMAND" ]; then
         [[ $i =~ ( ) ]] && i=${i@Q}
         COMMAND="$COMMAND $i"
     done
+fi
+
+echo "---------------------ORIGINAL COMMAND--------------------"
+echo "$COMMAND"
+echo "---------------------------------------------------------"
+
+if [ ! -f "$THCRAP_FOLDER/thcrap.exe" ]; then
+    if ${ZENITY} --question --text="thcrap doesn't appear to be installed on \"$THCRAP_FOLDER\". Would you like this script to install it there?"; then
+        mkdir -p "$THCRAP_FOLDER"
+        if [ ! -w "$THCRAP_FOLDER" ]; then
+            ${ZENITY} --error --text="The directory \"$THCRAP_FOLDER\" could not be created or is not writable. Check your permissions and try again."
+            exit
+        fi
+        LD_LIBRARY_PATH=/usr/lib64:/usr/lib curl -L -f 'https://github.com/thpatch/thcrap/releases/latest/download/thcrap.zip' -o /tmp/thcrap.zip | ${ZENITY} --progress --pulsate --auto-close --text="Downloading thcrap.zip"
+        if [ $? != 0 ] || [ ! -f "/tmp/thcrap.zip" ]; then
+            ${ZENITY} --error --text="Download failed. Aborting"
+            exit
+        fi
+        if bsdtar -C "$THCRAP_FOLDER" -xf /tmp/thcrap.zip || unzip -d "$THCRAP_FOLDER" /tmp/thcrap.zip; then
+            launch_config
+        else
+            ${ZENITY} --error --text="Failed to extract archive. Make sure you have installed either unzip or bsdtar (libarchive). Aborting"
+            exit
+        fi
+        rm /tmp/thcrap.zip
+    fi
+fi
+
+if [ ! -f "$THCRAP_FOLDER/config/$THCRAP_CONFIG" ]; then
+    CONFIGS=$(ls -Qm "$THCRAP_FOLDER/config" || printf none)
+    if ${ZENITY} --question --text="Config file \"$THCRAP_CONFIG\" not found (found: $CONFIGS). Would you like to launch the configuration tool?"; then
+        launch_config
+    fi
 fi
 
 if [ "$USE_VPATCH" == 1 ]; then
@@ -42,14 +84,40 @@ COMMAND=$(
     sed -r "s@ waitforexitandrun@& '$THCRAP_FOLDER/thcrap_loader.exe' $THCRAP_CONFIG@"
 )
 
-if [ "$USE_THPRAC" == 1 ]; then
-COMMAND=$(
-    echo "$COMMAND & sleep 10 && '$PROTON_FOLDER/proton' run '$THPRAC_FOLDER/thprac.exe'"
-)
-fi
-
 echo "--------------------GENERATED COMMAND--------------------"
 echo "$COMMAND"
 echo "---------------------------------------------------------"
 
-sh -c "$COMMAND"
+sh -c "$COMMAND" &
+
+# Get PID while ensuring only the actual Touhou executable is chosen
+while [ -z "$TH_PID" ]; do # Loop until a matching process is found
+    TH_PID=$(pgrep -a "^th[0-9].*\.exe$" | awk '{print $1}')
+    sleep 1
+done
+
+if [ "$USE_THPRAC" == 1 ]; then
+    PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\/proton\).*/\1/p')
+    COMMAND=$(
+        echo "'$PROTON_VER' run '$THPRAC_LOCATION'"
+    )
+
+    echo "----------------------LAUNCH THPRAC----------------------"
+    echo "$COMMAND"
+    echo "---------------------------------------------------------"
+
+    sh -c "$COMMAND" &
+fi
+
+# Check if Touhou is still running
+while kill -0 $TH_PID 2>/dev/null; do
+    sleep 5
+done
+
+# Find and kill the thcrap_loader process
+pkill -f "thcrap_loader.exe"
+
+if [ "$USE_THPRAC" == 1 ]; then
+    # Find and kill thprac
+    pkill -f "thprac.exe"
+fi
