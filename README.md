@@ -31,7 +31,9 @@ Download the script, mark it as executable, and put under `/usr/local/bin/` (or 
        curl -O https://raw.githubusercontent.com/redirectto/thprac-steam-proton-wrapper/master/thprac_proton
        chmod +x thprac_proton
        mv thprac_proton /usr/local/bin
-or     mv thprac_proton /home/deck/.local/share/thcrap/scripts
+or (/home/deck/.local/share/thcrap/scripts/)
+
+       mv thprac_proton /home/deck/.local/share/thcrap/scripts
 
 Download the latest asset from [thprac](https://github.com/touhouworldcup/thprac/releases/) (the .exe file) and put it wherever you please.
 You can place it for example on /home/deck/.local/share/thprac/
@@ -51,7 +53,9 @@ Go to your Steam library -> right click the game -> Properties -> and edit the l
 In case you have put your script outside `/usr/local/bin/`, you'll have to provide the full path:
    
        /path/to/thprac_proton -p -- %command%
-or     /home/deck/.local/share/thcrap/scripts/thprac_proton -p -- %command%
+example (/home/deck/.local/share/thcrap/scripts/)
+
+       /home/deck/.local/share/thcrap/scripts/thprac_proton -p -- %command%
 
 This is the base command, which will run the game with the default config with thprac.
 
@@ -66,16 +70,24 @@ To enable vpatch for that game, include the `-v` flag.
 If you want to launch a game with vpatch, thprac and the Spanish translation, the command would look like this:
 
        thprac_proton -v -p -c lang_es.js -- %command%
-or     /path/to/thprac_proton -v -p -c lang_es.js -- %command%
-or     /home/deck/Applications/Touhou/thcrap/scripts/thprac_proton -v -p -c lang_es.js -- %command%
+or (generic path)
+
+       /path/to/thprac_proton -v -p -c lang_es.js -- %command%
+example (/home/deck/.local/share/thcrap/scripts/)
+
+       /home/deck/.local/share/thcrap/scripts/thprac_proton -v -p -c lang_es.js -- %command%
 
 **Note: the `%command%` always comes at the end**
 
 If you want to use any environment variables in your launch options, you have to put them before the `%command%`, like this:
 
        thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
-or     /path/to/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
-or     /home/deck/Applications/Touhou/thcrap/scripts/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+or (generic path)
+
+       /path/to/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+example (/home/deck/.local/share/thcrap/scripts/)
+
+       /home/deck/.local/share/thcrap/scripts/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
 
 ### 4. Running the game
 Upon first launch, the script will download and set-up a thcrap instance, if there's not one already, and then launch the configuration tool, so you can generate your config files.
