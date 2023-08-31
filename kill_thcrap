@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+TH_REGEX="th[0-9].*\.exe"
+ALCOSTG_REGEX="alcostg.*\.exe"
+
+# Get PID while ensuring only the actual Touhou executable is chosen
+while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ]; do # Loop until a matching process is found
+    TH_PID=$(pgrep -a "$TH_REGEX" | awk '{print $1}')
+    ALCOSTG_PID=$(pgrep -a "$ALCOSTG_REGEX" | awk '{print $1}')
+    sleep 1
+done
+
+if [ -z "$TH_PID" ]; then
+    GAME_PID="$ALCOSTG_PID"
+else
+    GAME_PID="$TH_PID"
+fi
+
+# Check if Touhou is still running
+while ps -p $GAME_PID > /dev/null; do
+    sleep 5
+done
+
+# Find and kill the thcrap_loader process
+pkill -f "thcrap_loader.exe"
