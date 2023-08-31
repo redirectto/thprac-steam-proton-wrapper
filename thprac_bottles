@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+THPRAC_LOCATION="/home/$USER/.local/share/thprac/thprac.exe"
+
+# this script is made with bottles in mind, but you can modify it to use it with other launchers
+BOTTLE="Touhou"
+# if bottles is installed via flatpak
+BOTTLES_FOLDER="/home/$USER/.var/app/com.usebottles.bottles"
+
+RUNNER=$(grep -o 'Runner:.*$' "$BOTTLES_FOLDER/data/bottles/bottles/$BOTTLE/bottle.yml" | sed 's/^Runner: //')
+RUNNER_FOLDERS="$BOTTLES_FOLDER/data/bottles/runners"
+
+PROTON_VER="$RUNNER_FOLDERS/$RUNNER/proton"
+WINE_VER="$RUNNER_FOLDERS/$RUNNER/bin/wine"
+
+TH_REGEX="th[0-9].*\.exe"
+ALCOSTG_REGEX="alcostg.*\.exe"
+
+# Get PID while ensuring only the actual Touhou executable is chosen
+while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ]; do # Loop until a matching process is found
+    TH_PID=$(pgrep -a "$TH_REGEX" | awk '{print $1}')
+    ALCOSTG_PID=$(pgrep -a "$ALCOSTG_REGEX" | awk '{print $1}')
+    sleep 1
+done
+
+if [ -z "$TH_PID" ]; then
+    GAME_PID="$ALCOSTG_PID"
+else
+    GAME_PID="$TH_PID"
+fi
+
+# Checks if the runner uses proton instead of wine
+if [ -f "$PROTON_VER" ]; then
+    COMMAND=$(
+        echo "'$PROTON_VER' run '$THPRAC_LOCATION'"
+    )
+else
+    COMMAND=$(
+        echo "'$WINE_VER' '$THPRAC_LOCATION'"
+    )
+fi
+
+echo "----------------------LAUNCH THPRAC----------------------"
+echo "$COMMAND"
+echo "---------------------------------------------------------"
+
+sh -c "$COMMAND" &
+
+# Check if Touhou is still running
+while ps -p $GAME_PID > /dev/null; do
+    sleep 5
+done
+
+# Find and kill the thcrap_loader process
+pkill -f "thcrap_loader.exe"
+
+# Find and kill thprac
+pkill -f "thprac.exe"
