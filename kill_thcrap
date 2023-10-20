@@ -5,8 +5,8 @@ ALCOSTG_REGEX="alcostg.*\.exe"
 
 # Get PID while ensuring only the actual Touhou executable is chosen
 while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ]; do # Loop until a matching process is found
-    TH_PID=$(pgrep -a "$TH_REGEX" | awk '{print $1}')
-    ALCOSTG_PID=$(pgrep -a "$ALCOSTG_REGEX" | awk '{print $1}')
+    TH_PID=$(pgrep "$TH_REGEX")
+    ALCOSTG_PID=$(pgrep "$ALCOSTG_REGEX")
     sleep 1
 done
 
