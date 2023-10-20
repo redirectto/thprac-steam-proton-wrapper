@@ -15,25 +15,20 @@ On Linux, this isn't the case. Due to the compatibility layer used to run the ga
 Also, with Steam Play/Proton, it is expected that you can run your games without having to mess around with Wine. For Touhou, it's annoying having to fire up Wine to be able to set-up the translation patches, and then having no proper integration with Steam when trying to play the games.
 
 ## How to use
-[Here's a video tutorial](https://www.youtube.com/watch?v=gyC_EWNWqPc) by [Maxmani](https://www.youtube.com/c/Maxmani) (outdated).
+[Here's a video tutorial](https://www.youtube.com/watch?v=6rZxeyILYmo) by [Maxmani](https://www.youtube.com/c/Maxmani).
 [Here is a reddit post](https://www.reddit.com/r/SteamDeck/comments/yy3xz9/how_to_use_thcrap_touhou_community_reliant/) to help you set up this on the Steam Deck by [Mino_nosty](https://www.reddit.com/user/mino_nosty/) (somewhat outdated)
 
-**No longer need to set-up thcrap manually**
 ### 1. Installation
-#### For Steam Flatpak (Not recommended, I haven't got it working)
-
-       flatpak install flathub com.valvesoftware.Steam.Utility.thcrap_steam_proton_wrapper
-
 #### Manual installation
 
-Download the script, mark it as executable, and put under `/usr/local/bin/` (or somewhere that you find convenient such as /home/deck/.local/share/thcrap/scripts/):
+Download the script, mark it as executable, and put under `/usr/local/bin/` (or somewhere that you find convenient):
 
-       curl -O https://raw.githubusercontent.com/redirectto/thprac-steam-proton-wrapper/master/thprac_proton
-       chmod +x thprac_proton
-       mv thprac_proton /usr/local/bin
+    curl -O https://raw.githubusercontent.com/redirectto/thprac-steam-proton-wrapper/master/thprac_proton
+    chmod +x thprac_proton
+    mv thprac_proton /usr/local/bin
 or (/home/deck/.local/share/thcrap/scripts/)
 
-       mv thprac_proton /home/deck/.local/share/thcrap/scripts
+    mv thprac_proton /home/deck/.local/share/thcrap/scripts
 
 Download the latest asset from [thprac](https://github.com/touhouworldcup/thprac/releases/) (the .exe file) and put it wherever you please.
 You can place it for example on /home/deck/.local/share/thprac/
@@ -48,14 +43,14 @@ If you have gone through the manual installation, you have the opportunity to ch
 ### 3. Setting the launch options
 Go to your Steam library -> right click the game -> Properties -> and edit the launch options to:
 
-       thprac_proton -p -- %command%
+    thprac_proton -p -- %command%
    
 In case you have put your script outside `/usr/local/bin/`, you'll have to provide the full path:
    
-       /path/to/thprac_proton -p -- %command%
+    /path/to/thprac_proton -p -- %command%
 example (/home/deck/.local/share/thcrap/scripts/)
 
-       /home/deck/.local/share/thcrap/scripts/thprac_proton -p -- %command%
+    /home/deck/.local/share/thcrap/scripts/thprac_proton -p -- %command%
 
 This is the base command, which will run the game with the default config with thprac.
 
@@ -69,25 +64,25 @@ To enable vpatch for that game, include the `-v` flag.
 
 If you want to launch a game with vpatch, thprac and the Spanish translation, the command would look like this:
 
-       thprac_proton -v -p -c lang_es.js -- %command%
+    thprac_proton -v -p -c lang_es.js -- %command%
 or (generic path)
 
-       /path/to/thprac_proton -v -p -c lang_es.js -- %command%
+    /path/to/thprac_proton -v -p -c lang_es.js -- %command%
 example (/home/deck/.local/share/thcrap/scripts/)
 
-       /home/deck/.local/share/thcrap/scripts/thprac_proton -v -p -c lang_es.js -- %command%
+    /home/deck/.local/share/thcrap/scripts/thprac_proton -v -p -c lang_es.js -- %command%
 
 **Note: the `%command%` always comes at the end**
 
 If you want to use any environment variables in your launch options, you have to put them before the `%command%`, like this:
 
-       thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
 or (generic path)
 
-       /path/to/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    /path/to/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
 example (/home/deck/.local/share/thcrap/scripts/)
 
-       /home/deck/.local/share/thcrap/scripts/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    /home/deck/.local/share/thcrap/scripts/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
 
 ### 4. Running the game
 Upon first launch, the script will download and set-up a thcrap instance, if there's not one already, and then launch the configuration tool, so you can generate your config files.
