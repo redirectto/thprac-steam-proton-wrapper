@@ -76,13 +76,13 @@ example (/home/deck/.local/share/thcrap/scripts/)
 
 If you want to use any environment variables in your launch options, you have to put them before the `%command%`, like this:
 
-    thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    thprac_proton -- LANG=ja_JP.utf8 %command%
 or (generic path)
 
-    /path/to/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    /path/to/thprac_proton -- LANG=ja_JP.utf8 %command%
 example (/home/deck/.local/share/thcrap/scripts/)
 
-    /home/deck/.local/share/thcrap/scripts/thprac_proton -- LC_ALL=ja_JP.UTF-8 %command%
+    /home/deck/.local/share/thcrap/scripts/thprac_proton -- LANG=ja_JP.utf8 %command%
 
 ### 4. Running the game
 Upon first launch, the script will download and set-up a thcrap instance, if there's not one already, and then launch the configuration tool, so you can generate your config files.
