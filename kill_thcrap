@@ -2,15 +2,19 @@
 
 TH_REGEX="th[0-9].*\.exe"
 ALCOSTG_REGEX="alcostg.*\.exe"
+TH06_REGEX="東方紅魔郷.*"
 
 # Get PID while ensuring only the actual Touhou executable is chosen
-while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ]; do # Loop until a matching process is found
+while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ] && [ -z "$TH06_PID" ]; do # Loop until a matching process is found
     TH_PID=$(pgrep "$TH_REGEX")
+    TH06_PID=$(pgrep "$TH06_REGEX")
     ALCOSTG_PID=$(pgrep "$ALCOSTG_REGEX")
     sleep 1
 done
 
-if [ -z "$TH_PID" ]; then
+if [ -n "$TH06_PID" ]; then
+    GAME_PID="$TH06_PID"
+elif [ -n "$ALCOSTG_PID" ]; then
     GAME_PID="$ALCOSTG_PID"
 else
     GAME_PID="$TH_PID"
