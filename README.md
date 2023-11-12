@@ -84,6 +84,16 @@ example (/home/deck/.local/share/thcrap/scripts/)
 
     /home/deck/.local/share/thcrap/scripts/thprac_proton -- LANG=ja_JP.utf8 %command%
 
+You can also launch non-steam titles with this script (thprac does not work yet)
+
+    target: "/run/media/mmcblk0p1/Games/Touhou/TH08 Imperishable Night/th08.exe"
+    start in: /home/deck/.local/share/scripts/
+    launch options: /home/deck/.local/share/scripts/thprac_proton -v -- %command%
+    
+    target: /run/media/mmcblk0p1/Games/Touhou/TH06 the Embodiment of Scarlet Devil/東方紅魔郷.exe
+    start in: /home/deck/.local/share/scripts/
+    launch options: /home/deck/.local/share/scripts/thprac_proton -v -- LANG="ja_JP.utf8" %command% 
+    
 ### 4. Running the game
 Upon first launch, the script will download and set-up a thcrap instance, if there's not one already, and then launch the configuration tool, so you can generate your config files.
 
