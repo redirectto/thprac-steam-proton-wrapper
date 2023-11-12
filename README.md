@@ -60,7 +60,7 @@ To change the config file loaded by thcrap, use the `-c` flag. By default it use
 
 To enable vpatch for that game, include the `-v` flag.
 
-**Note that this script does not install vpatch on it's own.**
+You can force launch custom.exe with the `-k`flag. It doesn't work with `-v` or `-p` flags.
 
 If you want to launch a game with vpatch, thprac and the Spanish translation, the command would look like this:
 
