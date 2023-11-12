@@ -20,8 +20,9 @@ launch_config() {
     sh -c "$RUN"
 }
 
-while getopts "v p c:e:" flag; do
+while getopts "k v p c:e:" flag; do
     case "${flag}" in
+        k) USE_CUSTOM=1;;
         v) USE_VPATCH=1;;
         p) USE_THPRAC=1;;
         c) THCRAP_CONFIG=${OPTARG};;
@@ -38,6 +39,9 @@ if [ -z "$COMMAND" ]; then
         COMMAND="$COMMAND $i"
     done
 fi
+
+PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\/proton\).*/\1/p')
+ENV_VARIABLES=$(echo "$COMMAND" | sed -r 's/(.* )SteamLaunch.*/\1/' | sed -r 's/(.*)\/home.*/\1/')
 
 echo "---------------------ORIGINAL COMMAND--------------------"
 echo "$COMMAND"
@@ -72,13 +76,14 @@ if [ ! -f "$THCRAP_FOLDER/config/$THCRAP_CONFIG" ]; then
     fi
 fi
 
-TH_REGEX="th[0-9].*\.exe"
-
-if [ "$USE_VPATCH" == 1 ]; then
-    COMMAND=$(
-        echo "$COMMAND" |
-        sed -r "s/$TH_REGEX/vpatch.exe/"
-    )
+if [ -n "$USE_CUSTOM" ]; then
+    SUBCOMMAND=$(echo "$COMMAND" | sed -r 's/(.*waitforexitandrun ).*/\1/')
+    GAME_PATH=$(echo "$COMMAND" | sed -r 's/.*waitforexitandrun (.*)/\1/' | sed 's/^\$?\?\('\''\)\?\(.*\)\1\?/\2/' | sed "s/^'//" | sed 's|\(.*\)/.*|\1|')
+    COMMAND="${SUBCOMMAND}'${GAME_PATH}/custom.exe'"
+elif [ -n "$USE_VPATCH" ]; then
+    SUBCOMMAND=$(echo "$COMMAND" | sed -r 's/(.*waitforexitandrun ).*/\1/')
+    GAME_PATH=$(echo "$COMMAND" | sed -r 's/.*waitforexitandrun (.*)/\1/' | sed 's/^\$?\?\('\''\)\?\(.*\)\1\?/\2/' | sed "s/^'//" | sed 's|\(.*\)/.*|\1|')
+    COMMAND="${SUBCOMMAND}'${GAME_PATH}/vpatch.exe'"
 fi
 
 COMMAND=$(
@@ -90,36 +95,66 @@ echo "--------------------GENERATED COMMAND--------------------"
 echo "$COMMAND"
 echo "---------------------------------------------------------"
 
-sh -c "$COMMAND" &
+sh -c "$COMMAND" > /dev/null 2>&1 &
 
-# Get PID while ensuring only the actual Touhou executable is chosen
-while [ -z "$TH_PID" ]; do # Loop until a matching process is found
-    TH_PID=$(pgrep "$TH_REGEX")
-    sleep 1
-done
+if [ -z "$USE_CUSTOM" ]; then
+    TH_REGEX="th[0-9].*\.exe"
+    ALCOSTG_REGEX="alcostg.*\.exe"
+    TH06_REGEX="東方紅魔郷.*"
 
-if [ "$USE_THPRAC" == 1 ]; then
-    PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\/proton\).*/\1/p')
-    COMMAND=$(
-        echo "'$PROTON_VER' run '$THPRAC_LOCATION'"
-    )
+    # Get PID while ensuring only the actual Touhou executable is chosen
+    while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ] && [ -z "$TH06_PID" ]; do # Loop until a matching process is found
+        TH_PID=$(pgrep "$TH_REGEX")
+        TH06_PID=$(pgrep "$TH06_REGEX")
+        ALCOSTG_PID=$(pgrep "$ALCOSTG_REGEX")
+        sleep 1
+    done
 
-    echo "----------------------LAUNCH THPRAC----------------------"
-    echo "$COMMAND"
-    echo "---------------------------------------------------------"
+    if [ -n "$TH06_PID" ]; then
+        GAME_PID="$TH06_PID"
+    elif [ -n "$ALCOSTG_PID" ]; then
+        GAME_PID="$ALCOSTG_PID"
+    else
+        GAME_PID="$TH_PID"
+    fi
 
-    sh -c "$COMMAND" &
-fi
+    if [ -n "$USE_THPRAC" ]; then
+        COMMAND=$(
+            echo "$ENV_VARIABLES$PROTON_VER run '$THPRAC_LOCATION'"
+        )
+        echo "----------------------LAUNCH THPRAC----------------------"
+        echo "$COMMAND"
+        echo "---------------------------------------------------------"
 
-# Check if Touhou is still running
-while ps -p $TH_PID > /dev/null; do
-    sleep 5
-done
+        sh -c "$COMMAND" > /dev/null 2>&1 &
+    fi
 
-# Find and kill the thcrap_loader process
-pkill -f "thcrap_loader.exe"
+    # Check if Touhou is still running
+    while ps -f $GAME_PID > /dev/null; do
+        sleep 5
+    done
 
-if [ "$USE_THPRAC" == 1 ]; then
-    # Find and kill thprac
-    pkill -f "thprac.exe"
+    # Find and kill the thcrap_loader process
+    pkill -f "thcrap_loader.exe"
+
+    if [ -n "$USE_THPRAC" ]; then
+        # Find and kill thprac
+        pkill -f "thprac.exe"
+    fi
+else
+    CUSTOM_REGEX="custom.exe"
+    
+    # Get PID while ensuring only the actual custom executable is chosen
+    while [ -z "$CUSTOM_PID" ]; do # Loop until a matching process is found
+        CUSTOM_PID=$(pgrep -x "$CUSTOM_REGEX")
+        sleep 1
+    done
+
+    # Check if custom is still running
+    while ps -f $CUSTOM_PID > /dev/null; do
+        sleep 5
+    done
+
+    # Find and kill the thcrap_loader process
+    pkill -f "thcrap_loader.exe"
 fi
