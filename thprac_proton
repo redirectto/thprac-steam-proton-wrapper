@@ -40,8 +40,8 @@ if [ -z "$COMMAND" ]; then
     done
 fi
 
-PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\/proton\).*/\1/p')
 ENV_VARIABLES=$(echo "$COMMAND" | sed -r 's/(.* )SteamLaunch.*/\1/' | sed -r 's/(.*)\/home.*/\1/')
+PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\) waitforexitandrun.*/\1/p')
 
 echo "---------------------ORIGINAL COMMAND--------------------"
 echo "$COMMAND"
