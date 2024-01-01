@@ -40,7 +40,6 @@ if [ -z "$COMMAND" ]; then
     done
 fi
 
-ENV_VARIABLES=$(echo "$COMMAND" | sed -r 's/(.* )SteamLaunch.*/\1/' | sed -r 's/(.*)\/home.*/\1/')
 PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\) waitforexitandrun.*/\1/p')
 
 echo "---------------------ORIGINAL COMMAND--------------------"
@@ -102,7 +101,7 @@ if [ -z "$USE_CUSTOM" ]; then
     ALCOSTG_REGEX="alcostg.*\.exe"
     TH06_REGEX="東方紅魔郷.*"
 
-    # Get PID while ensuring only the actual Touhou executable is chosen
+    # Get PID while ensuring one of the games is launched
     while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ] && [ -z "$TH06_PID" ]; do # Loop until a matching process is found
         TH_PID=$(pgrep "$TH_REGEX")
         TH06_PID=$(pgrep "$TH06_REGEX")
@@ -117,44 +116,35 @@ if [ -z "$USE_CUSTOM" ]; then
     else
         GAME_PID="$TH_PID"
     fi
-
-    if [ -n "$USE_THPRAC" ]; then
-        COMMAND=$(
-            echo "$ENV_VARIABLES$PROTON_VER run '$THPRAC_LOCATION'"
-        )
-        echo "----------------------LAUNCH THPRAC----------------------"
-        echo "$COMMAND"
-        echo "---------------------------------------------------------"
-
-        sh -c "$COMMAND" > /dev/null 2>&1 &
-    fi
-
-    # Check if Touhou is still running
-    while ps -f $GAME_PID > /dev/null; do
-        sleep 5
-    done
-
-    # Find and kill the thcrap_loader process
-    pkill -f "thcrap_loader.exe"
-
-    if [ -n "$USE_THPRAC" ]; then
-        # Find and kill thprac
-        pkill -f "thprac.exe"
-    fi
 else
     CUSTOM_REGEX="custom.exe"
-    
-    # Get PID while ensuring only the actual custom executable is chosen
-    while [ -z "$CUSTOM_PID" ]; do # Loop until a matching process is found
-        CUSTOM_PID=$(pgrep -x "$CUSTOM_REGEX")
+
+    # Get PID while ensuring custom.exe is launched
+    while [ -z "$GAME_PID" ]; do # Loop until a matching process is found
+        GAME_PID=$(pgrep -x "$CUSTOM_REGEX")
         sleep 1
     done
+fi
 
-    # Check if custom is still running
-    while ps -f $CUSTOM_PID > /dev/null; do
-        sleep 5
-    done
+if [ -z "$USE_CUSTOM" ] && [ -n "$USE_THPRAC" ]; then
+    COMMAND="${PROTON_VER} run '${THPRAC_LOCATION}'"
+    
+    echo "----------------------LAUNCH THPRAC----------------------"
+    echo "$COMMAND"
+    echo "---------------------------------------------------------"
 
-    # Find and kill the thcrap_loader process
-    pkill -f "thcrap_loader.exe"
+    sh -c "$COMMAND" > /dev/null 2>&1 &
+fi
+
+# Check if the game or custom is still running
+while ps -f $GAME_PID > /dev/null; do
+    sleep 5
+done
+
+# Find and kill the thcrap_loader process
+pkill -f "thcrap_loader.exe"
+
+if [ -z "$USE_CUSTOM" ] && [ -n "$USE_THPRAC" ]; then
+    # Find and kill thprac
+    pkill -f "thprac.exe"
 fi
