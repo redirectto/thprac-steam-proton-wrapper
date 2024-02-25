@@ -12,7 +12,7 @@ On Windows, when launching a game bought on Steam with thcrap, Steam will be abl
 
 On Linux, this isn't the case. Due to the compatibility layer used to run the games, launching them from outside the Steam client will make Steam unable to detect that they are running. This means that, while using thcrap, Steam integration won't be available, your playtime won't be tracked, and your friends won't be able to see that you are playing weird indie Japanese shmups.
 
-Also, with Steam Play/Proton, it is expected that you can run your games without having to mess around with Wine. For Touhou, it's annoying having to fire up Wine to be able to set-up the translation patches, and then having no proper integration with Steam when trying to play the games.
+Also, with Steam Play/Proton, it is expected that you can run your games without having to mess around with Wine. For Touhou, it's annoying having to fire up Wine to be able to set-up the translation patches, and then having no proper integration with Steam when trying to play the games. It gets more annoying when trying to also launch thprac specially with non-steam games.
 
 ## How to use
 [Here's a video tutorial](https://www.youtube.com/watch?v=6rZxeyILYmo) by [Maxmani](https://www.youtube.com/c/Maxmani).
@@ -54,13 +54,15 @@ example (/home/deck/.local/share/thcrap/scripts/)
 
 This is the base command, which will run the game with the default config with thprac.
 
-To disable thprac for that game, you have to remove the `-p` flag inside launch options for the game.
+To enable thprac for that game, you have to add the `-p` flag inside launch options for the game.
 
 To change the config file loaded by thcrap, use the `-c` flag. By default it uses en.js (english translation patch)
 
-To enable vpatch for that game, include the `-v` flag.
+To enable vpatch for that game, install vpatch on the game folder and then add the `-v` flag on launch options.
 
-You can force launch custom.exe with the `-k`flag. It doesn't work with `-v` or `-p` flags.
+You can force launch custom.exe with the `-k` flag. It doesn't work with `-v` or `-p` flags.
+
+You can also disable thcrap, you have to use the `-d` flag inside launch options for the game.
 
 If you want to launch a game with vpatch, thprac and the Spanish translation, the command would look like this:
 
@@ -84,15 +86,17 @@ example (/home/deck/.local/share/thcrap/scripts/)
 
     /home/deck/.local/share/thcrap/scripts/thprac_proton -- LANG=ja_JP.utf8 %command%
 
-You can also launch non-steam titles with this script (thprac does not work yet)
+You can also launch non-steam titles with this script (sadly thprac only works if installed on the games folder for non-steam titles)
 
-    target: "/run/media/mmcblk0p1/Games/Touhou/TH08 Imperishable Night/th08.exe"
-    start in: /home/deck/.local/share/scripts/
-    launch options: /home/deck/.local/share/scripts/thprac_proton -v -- %command%
+    target: "/run/media/deck/3886ce52-b6d7-4ab4-b3c6-7c2c9a03391e/Games/Touhou/TH08 Imperishable Night/th08.exe"
+    start in: "/run/media/deck/3886ce52-b6d7-4ab4-b3c6-7c2c9a03391e/Games/Touhou/TH08 Imperishable Night/"
+    launch options: /home/deck/.local/share/scripts/thprac_proton -p -- %command%
     
-    target: /run/media/mmcblk0p1/Games/Touhou/TH06 the Embodiment of Scarlet Devil/東方紅魔郷.exe
-    start in: /home/deck/.local/share/scripts/
-    launch options: /home/deck/.local/share/scripts/thprac_proton -v -- LANG="ja_JP.utf8" %command% 
+    target: "/run/media/deck/3886ce52-b6d7-4ab4-b3c6-7c2c9a03391e/Games/Touhou/TH06 the Embodiment of Scarlet Devil/東方紅魔郷.exe"
+    start in: "/run/media/deck/3886ce52-b6d7-4ab4-b3c6-7c2c9a03391e/Games/Touhou/TH06 the Embodiment of Scarlet Devil/"
+    launch options: /home/deck/.local/share/scripts/thprac_proton -p -- LANG="ja_JP.utf8" %command% 
+    
+When thprac is installed on the same folder as the game it detects if vpatch is installed so the -v flag is not needed
     
 ### 4. Running the game
 Upon first launch, the script will download and set-up a thcrap instance, if there's not one already, and then launch the configuration tool, so you can generate your config files.
@@ -103,4 +107,8 @@ And thats it!
 
 ## Advanced
 ### Debugging
-The script sends all it's output to `/tmp/thprac_proton.log`, which includes the original, the modified launch commands and the command that launches thprac.
+The script sends all it's output to `/tmp/thprac_proton.log`, which includes the original and the modified launch commands and the command that launches thprac.
+If you want to debug thprac after game launch you will have to modify the first sh -c "$COMMAND" line, if you want to debug the game launch you will either leave the code as is or modify the second sh -c "$COMMAND" line.
+
+    sh -c "$COMMAND" > /dev/null 2>&1 &
+    
