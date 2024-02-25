@@ -4,12 +4,10 @@ THCRAP_FOLDER="/home/$USER/.local/share/thcrap"
 THCRAP_CONFIG=en.js
 THPRAC_LOCATION="/home/$USER/.local/share/thprac/thprac.exe"
 
-ZENITY=${STEAM_ZENITY:-$(which zenity)}
+ZENITY=$(which zenity)
 
 echo "" > '/tmp/thprac_proton.log'
-exec 1<&-
-exec 2<&-
-exec 1<>'/tmp/thprac_proton.log'
+exec &>>'/tmp/thprac_proton.log'
 exec 2>&1
 
 launch_config() {
@@ -20,13 +18,13 @@ launch_config() {
     sh -c "$RUN"
 }
 
-while getopts "k v p c:e:" flag; do
+while getopts "d k p v c:" flag; do
     case "${flag}" in
+        d) DISABLE_THCRAP=1;;
         k) USE_CUSTOM=1;;
-        v) USE_VPATCH=1;;
         p) USE_THPRAC=1;;
+        v) USE_VPATCH=1;;
         c) THCRAP_CONFIG=${OPTARG};;
-        e) COMMAND=${OPTARG};; # Deprecated
     esac
 done
 
@@ -41,6 +39,9 @@ if [ -z "$COMMAND" ]; then
 fi
 
 PROTON_VER=$(echo "$COMMAND" | sed -n 's/.*--verb=waitforexitandrun -- \(.*\) waitforexitandrun.*/\1/p')
+
+# Format byte-encoded characters back to text
+COMMAND=$(printf "$COMMAND")
 
 echo "---------------------ORIGINAL COMMAND--------------------"
 echo "$COMMAND"
@@ -75,76 +76,64 @@ if [ ! -f "$THCRAP_FOLDER/config/$THCRAP_CONFIG" ]; then
     fi
 fi
 
-if [ -n "$USE_CUSTOM" ]; then
+if [ -n "$USE_CUSTOM" ] || [ -n "$USE_THPRAC" ] || [ -n "$USE_VPATCH" ]; then
     SUBCOMMAND=$(echo "$COMMAND" | sed -r 's/(.*waitforexitandrun ).*/\1/')
     GAME_PATH=$(echo "$COMMAND" | sed -r 's/.*waitforexitandrun (.*)/\1/' | sed 's/^\$?\?\('\''\)\?\(.*\)\1\?/\2/' | sed "s/^'//" | sed 's|\(.*\)/.*|\1|')
-    COMMAND="${SUBCOMMAND}'${GAME_PATH}/custom.exe'"
-elif [ -n "$USE_VPATCH" ]; then
-    SUBCOMMAND=$(echo "$COMMAND" | sed -r 's/(.*waitforexitandrun ).*/\1/')
-    GAME_PATH=$(echo "$COMMAND" | sed -r 's/.*waitforexitandrun (.*)/\1/' | sed 's/^\$?\?\('\''\)\?\(.*\)\1\?/\2/' | sed "s/^'//" | sed 's|\(.*\)/.*|\1|')
-    COMMAND="${SUBCOMMAND}'${GAME_PATH}/vpatch.exe'"
 fi
 
-COMMAND=$(
-    echo "$COMMAND" |
-    sed -r "s@ waitforexitandrun@& '$THCRAP_FOLDER/thcrap_loader.exe' $THCRAP_CONFIG@"
-)
+if [ -n "$USE_CUSTOM" ]; then
+    COMMAND="${SUBCOMMAND}'${GAME_PATH}/custom.exe'"
+else
+    if [ -n "$USE_THPRAC" ]; then
+        FOUND_THPRAC=$(find "$GAME_PATH" -maxdepth 1 \( -type f -o -type l \) -exec basename {} \; | grep -E "thprac.*\.exe" | head -n 1)
+        if [ -n "$FOUND_THPRAC" ]; then
+            COMMAND="${SUBCOMMAND}'${GAME_PATH}/$FOUND_THPRAC'"
+        fi
+    fi
+    if [ -n "$USE_VPATCH" ] && [ -z "$FOUND_THPRAC" ]; then
+        COMMAND="${SUBCOMMAND}'${GAME_PATH}/vpatch.exe'"
+    fi
+fi
+
+if [ -z "$DISABLE_THCRAP" ]; then
+    COMMAND=$(
+        echo "$COMMAND" |
+        sed -r "s@ waitforexitandrun@& '$THCRAP_FOLDER/thcrap_loader.exe' $THCRAP_CONFIG@"
+    )
+fi
 
 echo "--------------------GENERATED COMMAND--------------------"
 echo "$COMMAND"
 echo "---------------------------------------------------------"
 
-sh -c "$COMMAND" > /dev/null 2>&1 &
+sh -c "$COMMAND" &
 
 if [ -z "$USE_CUSTOM" ]; then
-    TH_REGEX="th[0-9].*\.exe"
-    ALCOSTG_REGEX="alcostg.*\.exe"
-    TH06_REGEX="東方紅魔郷.*"
-
-    # Get PID while ensuring one of the games is launched
-    while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ] && [ -z "$TH06_PID" ]; do # Loop until a matching process is found
-        TH_PID=$(pgrep "$TH_REGEX")
-        TH06_PID=$(pgrep "$TH06_REGEX")
-        ALCOSTG_PID=$(pgrep "$ALCOSTG_REGEX")
-        sleep 1
-    done
-
-    if [ -n "$TH06_PID" ]; then
-        GAME_PID="$TH06_PID"
-    elif [ -n "$ALCOSTG_PID" ]; then
-        GAME_PID="$ALCOSTG_PID"
-    else
-        GAME_PID="$TH_PID"
-    fi
+    TH_REGEX="(th[0-9]|東方紅魔郷|alcostg)"
 else
-    CUSTOM_REGEX="custom.exe"
-
-    # Get PID while ensuring custom.exe is launched
-    while [ -z "$GAME_PID" ]; do # Loop until a matching process is found
-        GAME_PID=$(pgrep -x "$CUSTOM_REGEX")
-        sleep 1
-    done
+    TH_REGEX="custom"
 fi
 
-if [ -z "$USE_CUSTOM" ] && [ -n "$USE_THPRAC" ]; then
+# Get PID while ensuring one of the games is launched
+while [ -z "$TH_PID" ]; do # Loop until a matching process is found
+    TH_PID=$(grep -Er "$TH_REGEX" /proc/*/stat | sed "s/.*:\([0-9]\+\).*/\\1/")
+    sleep 1
+done
+
+if [ -z "$USE_CUSTOM" ] && [ -n "$USE_THPRAC" ] && [ -z "$FOUND_THPRAC" ]; then
     COMMAND="${PROTON_VER} run '${THPRAC_LOCATION}'"
     
     echo "----------------------LAUNCH THPRAC----------------------"
     echo "$COMMAND"
     echo "---------------------------------------------------------"
 
-    sh -c "$COMMAND" > /dev/null 2>&1 &
+    sh -c "$COMMAND" &
 fi
 
 # Check if the game or custom is still running
-while ps -f $GAME_PID > /dev/null; do
+while ps -f $TH_PID > /dev/null; do
     sleep 5
 done
 
 # Find and kill the thcrap_loader process
 pkill -f "thcrap_loader.exe"
-
-if [ -z "$USE_CUSTOM" ] && [ -n "$USE_THPRAC" ]; then
-    # Find and kill thprac
-    pkill -f "thprac.exe"
-fi
