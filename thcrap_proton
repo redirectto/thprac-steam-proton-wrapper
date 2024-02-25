@@ -88,7 +88,7 @@ echo "---------------------------------------------------------"
 
 sh -c "$COMMAND" &
 
-TH_REGEX="(th[0-9]+|東方紅魔郷)"
+TH_REGEX="(th[0-9]|東方紅魔郷|alcostg)"
 
 # Get PID while ensuring only the actual Touhou executable is chosen
 while [ -z "$TH_PID" ]; do # Loop until a matching process is found
