@@ -106,8 +106,8 @@ while [ -z "$TH_PID" ]; do # Loop until a matching process is found
     sleep 1
 done
 
-# Check if Touhou is still running
-while ps -p $TH_PID > /dev/null; do
+# Check if the game or custom is still running
+while ps -f $TH_PID > /dev/null; do
     sleep 5
 done
 
