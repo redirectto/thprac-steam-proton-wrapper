@@ -1,27 +1,15 @@
 #!/usr/bin/env bash
 
-TH_REGEX="th[0-9].*\.exe"
-ALCOSTG_REGEX="alcostg.*\.exe"
-TH06_REGEX="東方紅魔郷.*"
+TH_REGEX="(th[0-9]|東方紅魔郷|alcostg)"
 
-# Get PID while ensuring only the actual Touhou executable is chosen
-while [ -z "$TH_PID" ] && [ -z "$ALCOSTG_PID" ] && [ -z "$TH06_PID" ]; do # Loop until a matching process is found
-    TH_PID=$(pgrep "$TH_REGEX")
-    TH06_PID=$(pgrep "$TH06_REGEX")
-    ALCOSTG_PID=$(pgrep "$ALCOSTG_REGEX")
+# Get PID while ensuring one of the games is launched
+while [ -z "$TH_PID" ]; do # Loop until a matching process is found
+    TH_PID=$(grep -Er "$TH_REGEX" /proc/*/stat | sed "s/.*:\([0-9]\+\).*/\\1/")
     sleep 1
 done
 
-if [ -n "$TH06_PID" ]; then
-    GAME_PID="$TH06_PID"
-elif [ -n "$ALCOSTG_PID" ]; then
-    GAME_PID="$ALCOSTG_PID"
-else
-    GAME_PID="$TH_PID"
-fi
-
-# Check if Touhou is still running
-while ps -p $GAME_PID > /dev/null; do
+# Check if the game is still running
+while ps -p $TH_PID > /dev/null; do
     sleep 5
 done
 
