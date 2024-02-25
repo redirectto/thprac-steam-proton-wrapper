@@ -17,8 +17,9 @@ launch_config() {
     sh -c "$RUN"
 }
 
-while getopts "v c:e:" flag; do
+while getopts "k v c:e:" flag; do
     case "${flag}" in
+        k) USE_CUSTOM=1;;
         v) USE_VPATCH=1;;
         c) THCRAP_CONFIG=${OPTARG};;
         e) COMMAND=${OPTARG};; # Deprecated
@@ -71,9 +72,14 @@ if [ ! -f "$THCRAP_FOLDER/config/$THCRAP_CONFIG" ]; then
     fi
 fi
 
-if [ "$USE_VPATCH" == 1 ]; then
+if [ -n "$USE_CUSTOM" ] || [ -n "$USE_VPATCH" ]; then
     SUBCOMMAND=$(echo "$COMMAND" | sed -r 's/(.*waitforexitandrun ).*/\1/')
     GAME_PATH=$(echo "$COMMAND" | sed -r 's/.*waitforexitandrun (.*)/\1/' | sed 's/^\$?\?\('\''\)\?\(.*\)\1\?/\2/' | sed "s/^'//" | sed 's|\(.*\)/.*|\1|')
+fi
+
+if [ -n "$USE_CUSTOM" ]; then
+    COMMAND="${SUBCOMMAND}'${GAME_PATH}/custom.exe'"
+elif [ -n "$USE_VPATCH" ]; then
     COMMAND="${SUBCOMMAND}'${GAME_PATH}/vpatch.exe'"
 fi
 
@@ -88,12 +94,16 @@ echo "---------------------------------------------------------"
 
 sh -c "$COMMAND" &
 
-TH_REGEX="(th[0-9]|東方紅魔郷|alcostg)"
+if [ -z "$USE_CUSTOM" ]; then
+    TH_REGEX="(th[0-9]|東方紅魔郷|alcostg)"
+else
+    TH_REGEX="custom"
+fi
 
-# Get PID while ensuring only the actual Touhou executable is chosen
+# Get PID while ensuring if either one of the games or custom is launched
 while [ -z "$TH_PID" ]; do # Loop until a matching process is found
     TH_PID=$(grep -Er "$TH_REGEX" /proc/*/stat | sed "s/.*:\([0-9]\+\).*/\\1/")
-    sleep 5
+    sleep 1
 done
 
 # Check if Touhou is still running
